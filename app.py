@@ -30,42 +30,31 @@ def create_app(config_name=None):
     Returns:
         The configured Flask application.
     """
-    # Get configuration based on environment
     config = get_config(config_name)
     
-    # Configure logging
     logging.basicConfig(
         level=getattr(logging, config.LOG_LEVEL),
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
     
-    # Create Flask app
     app = Flask(__name__)
     
-    # Load configuration from config object
     app.config.from_object(config)
     
-    # Enable CORS for all API routes
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     
-    # Initialize Swagger documentation
     swagger = configure_swagger(app)
     
-    # Register error handlers
     register_error_handlers(app)
     
-    # Configure extensions
     configure_extensions(app)
     
-    # Register blueprints
     register_blueprints(app)
     
-    # Register middleware
     register_middleware(app)
     
     return app
 
-# Create the application instance
 app = create_app()
 
 if __name__ == '__main__':
