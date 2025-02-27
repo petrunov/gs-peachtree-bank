@@ -34,7 +34,7 @@ The API will be available at http://127.0.0.1:5000/
 
 ## API Endpoints
 
-- `GET /` - HTML page listing all available API endpoints
+- `GET /swagger` - HTML page listing all available API endpoints
 - `GET /api/health` - Health check endpoint
 - `GET /api/transactions` - Get all transactions
 - `POST /api/transactions` - Create a new transaction
@@ -56,34 +56,6 @@ This endpoint:
 2. Supports pagination with limit and offset parameters
 3. Orders transactions by date (newest first)
 4. Returns a maximum of 100 transactions per request
-
-#### Create Transaction
-
-The POST endpoint allows you to create new transactions between accounts:
-
-```
-POST /api/transactions
-Content-Type: application/json
-
-{
-  "from_account_id": 1,
-  "to_account_id": 2,
-  "amount": "100.00",
-  "beneficiary": "John Doe",
-  "description": "Monthly rent payment"
-}
-```
-
-This will:
-
-1. Validate the request data
-2. Check if both accounts exist
-3. Verify sufficient funds in the source account
-4. Create a transaction record with "pending" state
-5. Update the balances of both accounts
-6. Return the created transaction with a 201 status code
-
-All of these operations are performed within a transaction context manager to ensure atomicity.
 
 ## Error Handling
 

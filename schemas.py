@@ -60,12 +60,29 @@ class TransactionSchema(Schema):
     description = fields.String(
         validate=validate.Length(max=200, error="Description cannot exceed 200 characters")
     )
+    state = fields.String(
+        validate=validate.OneOf(
+            ["pending", "completed", "failed", "cancelled"],
+            error="State must be one of: pending, completed, failed, cancelled"
+        )
+    )
     
     @validates_schema
     def validate_different_accounts(self, data, **kwargs):
         """Validate that source and destination accounts are different."""
         if data.get('from_account_id') == data.get('to_account_id'):
             raise ValidationError("Source and destination accounts must be different", "to_account_id")
+
+
+class TransactionUpdateSchema(Schema):
+    """Schema for validating transaction update data."""
+    state = fields.String(
+        required=True,
+        validate=validate.OneOf(
+            ["pending", "completed", "failed", "cancelled"],
+            error="State must be one of: pending, completed, failed, cancelled"
+        )
+    )
 
 
 class TransactionQuerySchema(Schema):
@@ -77,6 +94,23 @@ class TransactionQuerySchema(Schema):
     offset = fields.Integer(
         validate=validate.Range(min=0, error="Offset cannot be negative"),
         missing=0
+    )
+    sort_by = fields.String(
+        validate=validate.OneOf(
+            ["date", "amount", "beneficiary"],
+            error="Sort field must be one of: date, amount, beneficiary"
+        ),
+        missing="date"
+    )
+    sort_order = fields.String(
+        validate=validate.OneOf(
+            ["asc", "desc"],
+            error="Sort order must be one of: asc, desc"
+        ),
+        missing="desc"
+    )
+    search = fields.String(
+        validate=validate.Length(max=100, error="Search query cannot exceed 100 characters")
     )
 
 

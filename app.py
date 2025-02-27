@@ -5,15 +5,16 @@ import logging
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 from flasgger import Swagger, swag_from
-from errors import register_error_handlers, ValidationError
+from errors import register_error_handlers, ValidationError, ResourceNotFoundError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from schemas import validate_request, TransactionSchema, TransactionQuerySchema
+from schemas import validate_request, TransactionSchema, TransactionQuerySchema, TransactionUpdateSchema
 from flask_migrate import Migrate
 from models import db, Account, Transaction
 from db import db_transaction, get_or_404
 from decimal import Decimal
 from config import get_config
+from sqlalchemy import or_, desc, asc
 
 # Get configuration based on environment
 config = get_config()
@@ -76,6 +77,10 @@ swagger_template = {
         {
             "name": "Health",
             "description": "Health check endpoints"
+        },
+        {
+            "name": "Accounts",
+            "description": "Account management endpoints"
         },
         {
             "name": "Transactions",
@@ -145,6 +150,195 @@ def health_check():
     """Health check endpoint to verify the API is running."""
     return jsonify({"status": "healthy"})
 
+@app.route('/api/accounts', methods=['GET'])
+@limiter.limit("30 per minute")
+@swag_from({
+    "tags": ["Accounts"],
+    "summary": "Get all accounts",
+    "description": "Returns a list of all accounts in the database",
+    "parameters": [
+        {
+            "name": "limit",
+            "in": "query",
+            "type": "integer",
+            "description": "Maximum number of accounts to return",
+            "default": 100,
+            "required": False
+        },
+        {
+            "name": "offset",
+            "in": "query",
+            "type": "integer",
+            "description": "Number of accounts to skip",
+            "default": 0,
+            "required": False
+        }
+    ],
+    "responses": {
+        "200": {
+            "description": "List of accounts",
+            "schema": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer",
+                            "example": 1
+                        },
+                        "account_number": {
+                            "type": "string",
+                            "example": "1234567890"
+                        },
+                        "account_name": {
+                            "type": "string",
+                            "example": "John Doe Checking"
+                        },
+                        "balance": {
+                            "type": "string",
+                            "example": "5000.00"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "example": "USD"
+                        },
+                        "created_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2025-02-27T11:00:00.000Z"
+                        }
+                    }
+                }
+            }
+        }
+    }
+})
+def get_accounts():
+    """Get all accounts.
+    
+    Returns a list of all accounts in the database.
+    
+    Query parameters:
+    - limit: Maximum number of accounts to return (default: 100)
+    - offset: Number of accounts to skip (default: 0)
+    """
+    # Validate query parameters
+    query_params = {}
+    if request.args.get('limit'):
+        query_params['limit'] = request.args.get('limit')
+    if request.args.get('offset'):
+        query_params['offset'] = request.args.get('offset')
+    
+    # Validate and get parameters
+    validated_params = validate_request(TransactionQuerySchema(), query_params)
+    limit = validated_params.get('limit', 100)
+    offset = validated_params.get('offset', 0)
+    
+    # Query accounts with pagination
+    accounts = Account.query.limit(limit).offset(offset).all()
+    
+    # Format the response
+    result = []
+    for account in accounts:
+        result.append({
+            "id": account.id,
+            "account_number": account.account_number,
+            "account_name": account.account_name,
+            "balance": str(account.balance),
+            "currency": account.currency,
+            "created_at": account.created_at.isoformat()
+        })
+    
+    # Return the accounts
+    return jsonify(result)
+
+@app.route('/api/accounts/<int:account_id>', methods=['GET'])
+@limiter.limit("30 per minute")
+@swag_from({
+    "tags": ["Accounts"],
+    "summary": "Get account details",
+    "description": "Returns details for a specific account",
+    "parameters": [
+        {
+            "name": "account_id",
+            "in": "path",
+            "type": "integer",
+            "description": "ID of the account to retrieve",
+            "required": True
+        }
+    ],
+    "responses": {
+        "200": {
+            "description": "Account details",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "account_number": {
+                        "type": "string",
+                        "example": "1234567890"
+                    },
+                    "account_name": {
+                        "type": "string",
+                        "example": "John Doe Checking"
+                    },
+                    "balance": {
+                        "type": "string",
+                        "example": "5000.00"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "example": "USD"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-02-27T11:00:00.000Z"
+                    }
+                }
+            }
+        },
+        "404": {
+            "description": "Account not found",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "example": "ResourceNotFoundError"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Account not found"
+                    }
+                }
+            }
+        }
+    }
+})
+def get_account(account_id):
+    """Get a specific account by ID.
+    
+    Returns details for a specific account.
+    
+    Path parameters:
+    - account_id: ID of the account to retrieve
+    """
+    # Get the account
+    account = get_or_404(Account, account_id)
+    
+    # Return the account details
+    return jsonify({
+        "id": account.id,
+        "account_number": account.account_number,
+        "account_name": account.account_name,
+        "balance": str(account.balance),
+        "currency": account.currency,
+        "created_at": account.created_at.isoformat()
+    })
 
 @app.route('/api/transactions', methods=['GET'])
 @limiter.limit("30 per minute")
@@ -167,6 +361,31 @@ def health_check():
             "type": "integer",
             "description": "Number of transactions to skip",
             "default": 0,
+            "required": False
+        },
+        {
+            "name": "sort_by",
+            "in": "query",
+            "type": "string",
+            "description": "Field to sort by",
+            "enum": ["date", "amount", "beneficiary"],
+            "default": "date",
+            "required": False
+        },
+        {
+            "name": "sort_order",
+            "in": "query",
+            "type": "string",
+            "description": "Sort order",
+            "enum": ["asc", "desc"],
+            "default": "desc",
+            "required": False
+        },
+        {
+            "name": "search",
+            "in": "query",
+            "type": "string",
+            "description": "Search query",
             "required": False
         }
     ],
@@ -226,21 +445,54 @@ def get_transactions():
     Query parameters:
     - limit: Maximum number of transactions to return (default: 100)
     - offset: Number of transactions to skip (default: 0)
+    - sort_by: Field to sort by (date, amount, beneficiary) (default: date)
+    - sort_order: Sort order (asc, desc) (default: desc)
+    - search: Search query
     """
     # Validate query parameters
     query_params = {}
-    if request.args.get('limit'):
-        query_params['limit'] = request.args.get('limit')
-    if request.args.get('offset'):
-        query_params['offset'] = request.args.get('offset')
+    for param in ['limit', 'offset', 'sort_by', 'sort_order', 'search']:
+        if request.args.get(param):
+            query_params[param] = request.args.get(param)
     
     # Validate and get parameters
     validated_params = validate_request(TransactionQuerySchema(), query_params)
     limit = validated_params.get('limit', 100)
     offset = validated_params.get('offset', 0)
+    sort_by = validated_params.get('sort_by', 'date')
+    sort_order = validated_params.get('sort_order', 'desc')
+    search = validated_params.get('search')
     
-    # Query transactions with pagination
-    transactions = Transaction.query.order_by(Transaction.date.desc()).limit(limit).offset(offset).all()
+    # Start building the query
+    query = Transaction.query
+    
+    # Apply search filter if provided
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            or_(
+                Transaction.beneficiary.ilike(search_term),
+                Transaction.description.ilike(search_term)
+            )
+        )
+    
+    # Apply sorting
+    if sort_by == 'date':
+        sort_column = Transaction.date
+    elif sort_by == 'amount':
+        sort_column = Transaction.amount
+    elif sort_by == 'beneficiary':
+        sort_column = Transaction.beneficiary
+    else:
+        sort_column = Transaction.date
+    
+    if sort_order == 'asc':
+        query = query.order_by(asc(sort_column))
+    else:
+        query = query.order_by(desc(sort_column))
+    
+    # Apply pagination
+    transactions = query.limit(limit).offset(offset).all()
     
     # Format the response
     result = []
@@ -259,6 +511,257 @@ def get_transactions():
     # Return the transactions
     return jsonify(result)
 
+@app.route('/api/transactions/<int:transaction_id>', methods=['GET'])
+@limiter.limit("30 per minute")
+@swag_from({
+    "tags": ["Transactions"],
+    "summary": "Get transaction details",
+    "description": "Returns details for a specific transaction",
+    "parameters": [
+        {
+            "name": "transaction_id",
+            "in": "path",
+            "type": "integer",
+            "description": "ID of the transaction to retrieve",
+            "required": True
+        }
+    ],
+    "responses": {
+        "200": {
+            "description": "Transaction details",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-02-27T11:00:00.000Z"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "example": "100.00"
+                    },
+                    "from_account_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "to_account_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "beneficiary": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": ["pending", "completed", "failed", "cancelled"],
+                        "example": "pending"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Monthly rent payment"
+                    }
+                }
+            }
+        },
+        "404": {
+            "description": "Transaction not found",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "example": "ResourceNotFoundError"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Transaction not found"
+                    }
+                }
+            }
+        }
+    }
+})
+def get_transaction(transaction_id):
+    """Get a specific transaction by ID.
+    
+    Returns details for a specific transaction.
+    
+    Path parameters:
+    - transaction_id: ID of the transaction to retrieve
+    """
+    # Get the transaction
+    transaction = get_or_404(Transaction, transaction_id)
+    
+    # Return the transaction details
+    return jsonify({
+        "id": transaction.id,
+        "date": transaction.date.isoformat(),
+        "amount": str(transaction.amount),
+        "from_account_id": transaction.from_account_id,
+        "to_account_id": transaction.to_account_id,
+        "beneficiary": transaction.beneficiary,
+        "state": transaction.state,
+        "description": transaction.description
+    })
+
+@app.route('/api/transactions/<int:transaction_id>', methods=['PATCH'])
+@limiter.limit("30 per minute")
+@swag_from({
+    "tags": ["Transactions"],
+    "summary": "Update transaction state",
+    "description": "Updates the state of a specific transaction",
+    "parameters": [
+        {
+            "name": "transaction_id",
+            "in": "path",
+            "type": "integer",
+            "description": "ID of the transaction to update",
+            "required": True
+        },
+        {
+            "name": "body",
+            "in": "body",
+            "required": True,
+            "schema": {
+                "type": "object",
+                "required": ["state"],
+                "properties": {
+                    "state": {
+                        "type": "string",
+                        "enum": ["pending", "completed", "failed", "cancelled"],
+                        "example": "completed"
+                    }
+                }
+            }
+        }
+    ],
+    "responses": {
+        "200": {
+            "description": "Transaction updated successfully",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-02-27T11:00:00.000Z"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "example": "100.00"
+                    },
+                    "from_account_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "to_account_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "beneficiary": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": ["pending", "completed", "failed", "cancelled"],
+                        "example": "completed"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Monthly rent payment"
+                    }
+                }
+            }
+        },
+        "400": {
+            "description": "Validation error",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "example": "ValidationError"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Request validation failed"
+                    },
+                    "details": {
+                        "type": "object",
+                        "example": {
+                            "state": ["State must be one of: pending, completed, failed, cancelled"]
+                        }
+                    }
+                }
+            }
+        },
+        "404": {
+            "description": "Transaction not found",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "example": "ResourceNotFoundError"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Transaction not found"
+                    }
+                }
+            }
+        }
+    }
+})
+def update_transaction(transaction_id):
+    """Update a transaction's state.
+    
+    Updates the state of a specific transaction.
+    
+    Path parameters:
+    - transaction_id: ID of the transaction to update
+    
+    Request body:
+    - state: New state for the transaction (pending, completed, failed, cancelled)
+    """
+    # Get JSON data from request
+    data = request.get_json()
+    if not data:
+        raise ValidationError("No JSON data provided")
+    
+    # Validate the request data
+    validated_data = validate_request(TransactionUpdateSchema(), data)
+    
+    # Get the transaction
+    transaction = get_or_404(Transaction, transaction_id)
+    
+    # Update the transaction state
+    with db_transaction():
+        transaction.state = validated_data['state']
+        # Commit is handled by the context manager
+    
+    # Return the updated transaction
+    return jsonify({
+        "id": transaction.id,
+        "date": transaction.date.isoformat(),
+        "amount": str(transaction.amount),
+        "from_account_id": transaction.from_account_id,
+        "to_account_id": transaction.to_account_id,
+        "beneficiary": transaction.beneficiary,
+        "state": transaction.state,
+        "description": transaction.description
+    })
 
 @app.route('/api/transactions', methods=['POST'])
 @limiter.limit("30 per minute")
