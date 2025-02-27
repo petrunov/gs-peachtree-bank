@@ -4,3 +4,4 @@ marshmallow
 Flask-SQLAlchemy
 SQLAlchemy
 Flask-Migrate
+flask-cors

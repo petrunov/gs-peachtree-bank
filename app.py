@@ -3,6 +3,7 @@ Main application file for the Peachtree Bank API.
 """
 import logging
 from flask import Flask, jsonify, render_template, request
+from flask_cors import CORS
 from errors import register_error_handlers, ValidationError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -19,6 +20,9 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
+
+# Enable CORS for all API routes
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Configure the database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///peachtree.db'
