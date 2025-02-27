@@ -58,3 +58,21 @@ The API includes several exception handling features:
 1. **Global Exception Handler** - Catches and logs any unexpected exceptions
 2. **Request/Response Logging** - Logs all incoming requests and outgoing responses
 3. **Exception Handling Decorator** - Provides consistent error handling for route functions
+4. **Rate Limiting** - Prevents abuse by limiting the number of requests clients can make
+
+## Rate Limiting
+
+The API implements rate limiting to prevent abuse and ensure fair usage:
+
+- Default limits: 200 requests per day, 50 requests per hour
+- Documentation page (`/`): No rate limit
+- Health check endpoint (`/api/health`): 10 requests per minute
+
+When a client exceeds the rate limit, the API returns a 429 Too Many Requests response:
+
+```json
+{
+  "error": "RateLimitExceeded",
+  "message": "Rate limit exceeded. Please try again later."
+}
+```

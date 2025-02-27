@@ -90,6 +90,14 @@ def register_error_handlers(app):
             "message": "The method is not allowed for the requested URL"
         }), 405
 
+    @app.errorhandler(429)
+    def ratelimit_error(error):
+        """Handler for 429 Too Many Requests errors (rate limiting)"""
+        return jsonify({
+            "error": "RateLimitExceeded",
+            "message": "Rate limit exceeded. Please try again later."
+        }), 429
+
     @app.errorhandler(500)
     def server_error(error):
         """Handler for 500 errors"""

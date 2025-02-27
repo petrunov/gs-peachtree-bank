@@ -72,6 +72,7 @@
         <strong>ValidationError</strong> (400) - Request validation failed
       </li>
       <li><strong>AuthorizationError</strong> (401) - Unauthorized access</li>
+      <li><strong>RateLimitExceeded</strong> (429) - Rate limit exceeded</li>
       <li>
         <strong>MethodNotAllowed</strong> (405) - The HTTP method is not allowed
         for the requested URL
@@ -83,6 +84,18 @@
       <li>
         <strong>UnexpectedError</strong> (500) - Catch-all for any unhandled
         exceptions
+      </li>
+    </ul>
+
+    <h2>Rate Limiting</h2>
+    <p>
+      This API implements rate limiting to prevent abuse and ensure fair usage:
+    </p>
+    <ul>
+      <li>Default limits: 200 requests per day, 50 requests per hour</li>
+      <li>Documentation page (<code>/</code>): No rate limit</li>
+      <li>
+        Health check endpoint (<code>/api/health</code>): 10 requests per minute
       </li>
     </ul>
   </body>
