@@ -27,4 +27,5 @@ The API will be available at http://127.0.0.1:5000/
 
 ## API Endpoints
 
+- `GET /` - HTML page listing all available API endpoints
 - `GET /api/health` - Health check endpoint

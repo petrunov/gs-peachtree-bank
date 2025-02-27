@@ -1,6 +1,11 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 
 app = Flask(__name__)
+
+@app.route('/', methods=['GET'])
+def index():
+    """Root endpoint that displays available API endpoints."""
+    return render_template('index.html')
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
