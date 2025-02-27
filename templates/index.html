@@ -98,5 +98,23 @@
         Health check endpoint (<code>/api/health</code>): 10 requests per minute
       </li>
     </ul>
+
+    <h2>Request Validation</h2>
+    <p>The API uses Marshmallow schemas to validate incoming request data:</p>
+    <div class="code-block">
+      <pre>
+{
+  "error": "ValidationError",
+  "message": "Request validation failed",
+  "details": {
+    "field_name": ["Error message for this field"]
+  }
+}
+      </pre>
+    </div>
+    <p>
+      All request data is validated to ensure it conforms to expected formats
+      and constraints before processing.
+    </p>
   </body>
 </html>

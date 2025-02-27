@@ -1,8 +1,10 @@
 import logging
 from flask import Flask, jsonify, render_template, request
-from errors import register_error_handlers
+from errors import register_error_handlers, ValidationError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from marshmallow import Schema, fields, validate
+from schemas import validate_request
 
 # Configure logging
 logging.basicConfig(
@@ -47,6 +49,14 @@ def index():
 def health_check():
     """Health check endpoint to verify the API is running."""
     return jsonify({"status": "healthy"})
+
+
+# Example schema for request validation
+class MessageSchema(Schema):
+    """Schema for validating message data."""
+    message = fields.String(required=True, validate=validate.Length(min=1, max=100))
+    priority = fields.Integer(validate=validate.Range(min=1, max=5))
+    tags = fields.List(fields.String(), validate=validate.Length(max=5))
 
 if __name__ == '__main__':
     app.run(debug=True)
