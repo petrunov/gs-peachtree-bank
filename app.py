@@ -1,6 +1,10 @@
 from flask import Flask, jsonify, render_template
+from errors import register_error_handlers
 
 app = Flask(__name__)
+
+# Register error handlers
+register_error_handlers(app)
 
 @app.route('/', methods=['GET'])
 def index():
