@@ -1,38 +1,9 @@
 """
-Main application file for the Peachtree Bank API.
+Swagger configuration and API documentation for the Peachtree Bank API.
 """
-import logging
-from flask import Flask, jsonify, render_template, request
-from flask_cors import CORS
 from flasgger import Swagger, swag_from
-from errors import register_error_handlers, ValidationError
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from schemas import validate_request, TransactionSchema
-from flask_migrate import Migrate
-from models import db, Account, Transaction
-from db import db_transaction, get_or_404
-from decimal import Decimal
-from config import get_config
 
-# Get configuration based on environment
-config = get_config()
-
-# Configure logging
-logging.basicConfig(
-    level=getattr(logging, config.LOG_LEVEL),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
-app = Flask(__name__)
-
-# Load configuration from config object
-app.config.from_object(config)
-
-# Enable CORS for all API routes
-CORS(app, resources={r"/api/*": {"origins": "*"}})
-
-# Initialize Swagger documentation
+# Swagger configuration
 swagger_config = {
     "headers": [],
     "specs": [
@@ -48,6 +19,7 @@ swagger_config = {
     "specs_route": "/swagger/"
 }
 
+# Swagger template
 swagger_template = {
     "swagger": "2.0",
     "info": {
@@ -79,50 +51,13 @@ swagger_template = {
         },
         {
             "name": "Transactions",
-            "description": "Transaction management endpoints"
+            "description": "Transaction management endpoints. The /api/transactions endpoint supports the following methods: GET (retrieve all transactions), POST (create a new transaction)"
         }
     ]
 }
 
-swagger = Swagger(app, config=swagger_config, template=swagger_template)
-
-# Initialize the database
-db.init_app(app)
-migrate = Migrate(app, db)
-
-# Register error handlers
-register_error_handlers(app)
-
-# Configure rate limiting
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=config.RATELIMIT_DEFAULT_LIMITS,
-    storage_uri=config.RATELIMIT_STORAGE_URI,
-    strategy=config.RATELIMIT_STRATEGY
-)
-
-# Request/Response logging middleware
-@app.before_request
-def log_request():
-    """Log the incoming request"""
-    app.logger.info(f"Request: {request.method} {request.path}")
-
-@app.after_request
-def log_response(response):
-    """Log the response"""
-    app.logger.info(f"Response: {response.status_code}")
-    return response
-
-@app.route('/', methods=['GET'])
-@limiter.exempt  # No rate limit for documentation page
-def index():
-    """Root endpoint that displays available API endpoints."""
-    return render_template('index.html')
-
-@app.route('/api/health', methods=['GET'])
-@limiter.limit("10 per minute")  # Custom rate limit for health endpoint
-@swag_from({
+# Endpoint documentation
+health_check_doc = {
     "tags": ["Health"],
     "summary": "Health check endpoint",
     "description": "Returns the health status of the API",
@@ -140,18 +75,15 @@ def index():
             }
         }
     }
-})
-def health_check():
-    """Health check endpoint to verify the API is running."""
-    return jsonify({"status": "healthy"})
+}
 
-
-@app.route('/api/transactions', methods=['GET'])
-@limiter.limit("30 per minute")
-@swag_from({
+get_transactions_doc = {
     "tags": ["Transactions"],
     "summary": "Get all transactions",
     "description": "Returns a list of all transactions in the database",
+    "operationId": "getTransactions",
+    "produces": ["application/json"],
+    "methods": ["GET"],
     "parameters": [
         {
             "name": "limit",
@@ -217,51 +149,14 @@ def health_check():
             }
         }
     }
-})
-def get_transactions():
-    """Get all transactions.
-    
-    Returns a list of all transactions in the database.
-    
-    Query parameters:
-    - limit: Maximum number of transactions to return (default: 100)
-    - offset: Number of transactions to skip (default: 0)
-    """
-    # Get query parameters
-    limit = request.args.get('limit', 100, type=int)
-    offset = request.args.get('offset', 0, type=int)
-    
-    # Limit the maximum number of transactions to return
-    if limit > 100:
-        limit = 100
-    
-    # Query transactions with pagination
-    transactions = Transaction.query.order_by(Transaction.date.desc()).limit(limit).offset(offset).all()
-    
-    # Format the response
-    result = []
-    for transaction in transactions:
-        result.append({
-            "id": transaction.id,
-            "date": transaction.date.isoformat(),
-            "amount": str(transaction.amount),
-            "from_account_id": transaction.from_account_id,
-            "to_account_id": transaction.to_account_id,
-            "beneficiary": transaction.beneficiary,
-            "state": transaction.state,
-            "description": transaction.description
-        })
-    
-    # Return the transactions
-    return jsonify(result)
+}
 
-
-@app.route('/api/transactions', methods=['POST'])
-@limiter.limit("30 per minute")
-@swag_from({
+create_transaction_doc = {
     "tags": ["Transactions"],
     "summary": "Create a new transaction",
     "description": "Creates a new transaction between accounts",
+    "operationId": "createTransaction",
+    "produces": ["application/json"],
     "parameters": [
         {
             "name": "body",
@@ -377,72 +272,20 @@ def get_transactions():
             }
         }
     }
-})
-def create_transaction():
-    """Create a new transaction.
-    
-    Accepts JSON with:
-    - from_account_id: ID of the source account
-    - to_account_id: ID of the destination account
-    - amount: Amount to transfer
-    - beneficiary: Name of the beneficiary
-    - description: Optional description
-    
-    Returns the created transaction.
-    """
-    # Get JSON data from request
-    data = request.get_json()
-    if not data:
-        raise ValidationError("No JSON data provided")
-    
-    # Validate the request data
-    validated_data = validate_request(TransactionSchema(), data)
-    
-    # Get the accounts
-    from_account = get_or_404(Account, validated_data['from_account_id'])
-    to_account = get_or_404(Account, validated_data['to_account_id'])
-    
-    # Check if accounts are different
-    if from_account.id == to_account.id:
-        raise ValidationError("Source and destination accounts must be different")
-    
-    # Check if source account has sufficient funds
-    amount = Decimal(str(validated_data['amount']))
-    if from_account.balance < amount:
-        raise ValidationError("Insufficient funds in source account")
-    
-    # Create the transaction
-    with db_transaction():
-        # Create transaction record
-        transaction = Transaction(
-            date=validated_data.get('date'),
-            amount=amount,
-            from_account_id=from_account.id,
-            to_account_id=to_account.id,
-            beneficiary=validated_data['beneficiary'],
-            state='pending',
-            description=validated_data.get('description', '')
-        )
-        db.session.add(transaction)
-        
-        # Update account balances
-        from_account.balance -= amount
-        to_account.balance += amount
-        
-        # Commit is handled by the context manager
-    
-    # Return the created transaction
-    return jsonify({
-        "id": transaction.id,
-        "date": transaction.date.isoformat(),
-        "amount": str(transaction.amount),
-        "from_account_id": transaction.from_account_id,
-        "to_account_id": transaction.to_account_id,
-        "beneficiary": transaction.beneficiary,
-        "state": transaction.state,
-        "description": transaction.description
-    }), 201
+}
 
+def init_swagger(app):
+    """Initialize Swagger for the Flask application."""
+    return Swagger(app, config=swagger_config, template=swagger_template)
 
-if __name__ == '__main__':
-    app.run(debug=config.DEBUG)
+def get_health_check_doc():
+    """Get the Swagger documentation for the health check endpoint."""
+    return health_check_doc
+
+def get_transactions_doc():
+    """Get the Swagger documentation for the get transactions endpoint."""
+    return get_transactions_doc
+
+def get_create_transaction_doc():
+    """Get the Swagger documentation for the create transaction endpoint."""
+    return create_transaction_doc

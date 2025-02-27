@@ -18,7 +18,14 @@ A simple REST API built with Flask for Peachtree Bank.
    pip install -r requirements.txt
    ```
 
-3. Run the application:
+3. Configure environment (optional):
+
+   ```
+   cp .env.example .env
+   # Edit .env file with your settings
+   ```
+
+4. Run the application:
    ```
    python app.py
    ```
@@ -113,6 +120,7 @@ The API includes several features for robustness and security:
 8. **Context Managers** - Safe database transaction handling
 9. **CORS Support** - Cross-Origin Resource Sharing for frontend applications
 10. **OpenAPI Documentation** - Swagger UI for API exploration and testing
+11. **Environment Configuration** - Different configurations for development, testing, and production
 
 ## API Documentation
 
@@ -194,6 +202,48 @@ Validation is implemented using:
 - **Marshmallow schemas** - Define the expected structure and constraints for request data
 - **Custom validation functions** - Handle complex validation logic
 - **Integration with error handling** - Provides consistent error responses for validation failures
+
+## Environment Configuration
+
+The API supports different configurations for different environments (development, testing, production). The configuration is managed through the `config.py` file and environment variables.
+
+### Configuration Classes
+
+- **DevelopmentConfig** - Used for local development (default)
+
+  - Debug mode enabled
+  - Detailed logging
+  - SQLite database
+
+- **TestingConfig** - Used for running tests
+
+  - Testing mode enabled
+  - In-memory SQLite database
+  - Rate limiting disabled
+
+- **ProductionConfig** - Used for production deployment
+  - Debug mode disabled
+  - Minimal logging
+  - Environment variables required for sensitive settings
+
+### Environment Variables
+
+You can customize the configuration by setting environment variables. The easiest way is to create a `.env` file in the project root:
+
+```
+# Copy the example file
+cp .env.example .env
+
+# Edit the .env file with your settings
+```
+
+Available environment variables:
+
+- `FLASK_ENV` - Environment name (development, testing, production)
+- `SECRET_KEY` - Secret key for session management
+- `DATABASE_URL` - Database connection URL
+- `RATELIMIT_STORAGE_URI` - Storage URI for rate limiting
+- `LOG_LEVEL` - Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
 ## Database Setup
 
