@@ -4,6 +4,7 @@ Flask extensions for the Peachtree Bank API.
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_migrate import Migrate
+
 from models import db
 
 # Initialize rate limiter without app

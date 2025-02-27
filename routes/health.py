@@ -4,11 +4,13 @@ Health check endpoints for the Peachtree Bank API.
 from flask import Blueprint, jsonify
 from flasgger import swag_from
 
+from extensions import limiter
+
 # Create blueprint
 health_bp = Blueprint('health', __name__, url_prefix='/api')
 
 @health_bp.route('/health', methods=['GET'])
-# Rate limiting will be applied in app.py
+@limiter.limit("10 per minute")  # Apply rate limiting
 @swag_from({
     "tags": ["Health"],
     "summary": "Health check endpoint",

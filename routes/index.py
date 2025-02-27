@@ -2,6 +2,7 @@
 Index endpoint for the Peachtree Bank API.
 """
 from flask import Blueprint, render_template
+
 from extensions import limiter
 
 # Create blueprint

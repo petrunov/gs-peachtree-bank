@@ -4,6 +4,7 @@ Main application file for the Peachtree Bank API.
 import logging
 from flask import Flask
 from flask_cors import CORS
+
 from errors import register_error_handlers
 from config import get_config
 from routes.health import health_bp

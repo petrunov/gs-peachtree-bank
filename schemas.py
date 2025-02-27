@@ -2,10 +2,12 @@
 Validation schemas for the Peachtree Bank API.
 Defines schemas for request validation using marshmallow.
 """
-from marshmallow import Schema, fields, validate, ValidationError, validates_schema
-from decimal import Decimal
 import re
+from decimal import Decimal
+
+from marshmallow import Schema, fields, validate, ValidationError, validates_schema
 from models import TransactionState
+from errors import ValidationError as APIValidationError
 
 
 class AccountSchema(Schema):
@@ -165,7 +167,6 @@ def validate_request(schema, request_data):
         return schema.load(request_data)
     except ValidationError as err:
         # Re-raise as our custom ValidationError
-        from errors import ValidationError as APIValidationError
         raise APIValidationError(
             message="Request validation failed",
             payload=err.messages

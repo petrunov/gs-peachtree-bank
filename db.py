@@ -4,8 +4,9 @@ Provides context managers for database operations.
 """
 from contextlib import contextmanager
 from sqlalchemy.exc import SQLAlchemyError
+
 from models import db
-from errors import APIError
+from errors import APIError, ResourceNotFoundError
 
 
 @contextmanager
@@ -80,8 +81,6 @@ def get_or_404(model, id):
     Raises:
         ResourceNotFoundError: If the object is not found
     """
-    from errors import ResourceNotFoundError
-    
     obj = model.query.get(id)
     if obj is None:
         raise ResourceNotFoundError(f"{model.__name__} with ID {id} not found")

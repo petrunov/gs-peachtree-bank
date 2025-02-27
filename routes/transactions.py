@@ -596,7 +596,6 @@ def create_transaction():
             state=TransactionState.SENT.value,
             description=validated_data.get('description', '')
         )
-        from models import db
         db.session.add(transaction)
         
         # Update account balances
