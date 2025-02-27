@@ -2,8 +2,10 @@
 Main application file for the Peachtree Bank API.
 """
 import logging
+import os
 from flask import Flask
 from flask_cors import CORS
+from dotenv import load_dotenv
 
 from errors import register_error_handlers
 from config import get_config
@@ -14,6 +16,9 @@ from routes.index import index_bp
 from middleware import register_middleware
 from swagger_config import configure_swagger
 from extensions import configure_extensions
+
+# Load environment variables from .env file if it exists
+load_dotenv()
 
 def register_blueprints(app):
     """Register Flask blueprints."""
@@ -42,7 +47,7 @@ def create_app(config_name=None):
     
     app.config.from_object(config)
     
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, resources={r"/api/*": {"origins": config.CORS_ORIGINS}})
     
     swagger = configure_swagger(app)
     

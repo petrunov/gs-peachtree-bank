@@ -1,72 +1,38 @@
 """
 Configuration settings for the Peachtree Bank API.
-Defines different configurations for different environments.
+Uses environment variables with sensible defaults for development.
 """
 import os
 
 
 class Config:
-    """Base configuration class."""
+    """Configuration class using environment variables with defaults."""
     # Flask settings
-    SECRET_KEY = 'dev-key-please-change-in-production'
-    DEBUG = False
-    TESTING = False
+    DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', 'yes', '1')
     
     # SQLAlchemy settings
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///peachtree.db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///peachtree.db')
     
     # Rate limiting settings
-    RATELIMIT_DEFAULT_LIMITS = ["200 per day", "50 per hour"]
-    RATELIMIT_STORAGE_URI = "memory://"
-    RATELIMIT_STRATEGY = "fixed-window"
+    RATELIMIT_DEFAULT_LIMITS = os.environ.get('RATELIMIT_DEFAULT_LIMITS', "200 per day, 50 per hour").split(',')
+    RATELIMIT_STORAGE_URI = os.environ.get('RATELIMIT_STORAGE_URI', "memory://")
+    RATELIMIT_STRATEGY = os.environ.get('RATELIMIT_STRATEGY', "fixed-window")
     
     # Logging settings
-    LOG_LEVEL = 'INFO'
-
-
-class DevelopmentConfig(Config):
-    """Development configuration."""
-    DEBUG = True
-    LOG_LEVEL = 'DEBUG'
-
-
-class TestingConfig(Config):
-    """Testing configuration."""
-    TESTING = True
-    DEBUG = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///test.db'
-    RATELIMIT_ENABLED = False
-
-
-class ProductionConfig(Config):
-    """Production configuration."""
-    SECRET_KEY = os.environ.get('SECRET_KEY', Config.SECRET_KEY)
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', Config.SQLALCHEMY_DATABASE_URI)
-
-
-# Dictionary mapping environment names to configuration classes
-config = {
-    'development': DevelopmentConfig,
-    'testing': TestingConfig,
-    'production': ProductionConfig,
-    # Development is the default
-    'default': DevelopmentConfig
-}
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG')
+    
+    # CORS settings
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*')
 
 
 def get_config(config_name=None):
-    """Get the configuration based on the environment or specified name.
+    """Get the configuration.
     
     Args:
-        config_name: Optional name of the configuration to use.
-                    If not provided, will use FLASK_ENV environment variable.
+        config_name: Not used, kept for backward compatibility.
     
     Returns:
         The configuration class.
     """
-    if config_name:
-        return config.get(config_name, config['default'])
-    
-    env = os.environ.get('FLASK_ENV', 'development')  # Development is default
-    return config.get(env, config['default'])
+    return Config
