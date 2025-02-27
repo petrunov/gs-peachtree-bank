@@ -12,6 +12,7 @@ from config import get_config
 from routes.health import health_bp
 from routes.search import search_bp
 from routes.transactions import transactions_bp
+from routes.accounts import accounts_bp
 from routes.index import index_bp
 from middleware import register_middleware
 from swagger_config import configure_swagger
@@ -25,6 +26,7 @@ def register_blueprints(app):
     app.register_blueprint(health_bp)
     app.register_blueprint(search_bp)
     app.register_blueprint(transactions_bp)
+    app.register_blueprint(accounts_bp)
     app.register_blueprint(index_bp)
 
 def create_app(config_name=None):

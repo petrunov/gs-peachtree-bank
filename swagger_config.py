@@ -63,6 +63,10 @@ def configure_swagger(app):
             {
                 "name": "Transactions",
                 "description": "Transaction management endpoints"
+            },
+            {
+                "name": "Accounts",
+                "description": "Account management endpoints"
             }
         ]
     }

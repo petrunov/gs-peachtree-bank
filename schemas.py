@@ -88,6 +88,32 @@ class TransactionUpdateSchema(Schema):
     )
 
 
+class AccountQuerySchema(Schema):
+    """Schema for validating account query parameters."""
+    limit = fields.Integer(
+        validate=validate.Range(min=1, max=100, error="Limit must be between 1 and 100"),
+        missing=100
+    )
+    offset = fields.Integer(
+        validate=validate.Range(min=0, error="Offset cannot be negative"),
+        missing=0
+    )
+    sort_by = fields.String(
+        validate=validate.OneOf(
+            ["account_number", "account_name", "balance", "created_at"],
+            error="Sort field must be one of: account_number, account_name, balance, created_at"
+        ),
+        missing="account_number"
+    )
+    sort_order = fields.String(
+        validate=validate.OneOf(
+            ["asc", "desc"],
+            error="Sort order must be one of: asc, desc"
+        ),
+        missing="asc"
+    )
+
+
 class TransactionQuerySchema(Schema):
     """Schema for validating transaction query parameters."""
     limit = fields.Integer(
