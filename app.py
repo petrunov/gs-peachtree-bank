@@ -4,6 +4,7 @@ Main application file for the Peachtree Bank API.
 import logging
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
+from flasgger import Swagger, swag_from
 from errors import register_error_handlers, ValidationError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -27,6 +28,60 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 # Configure the database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///peachtree.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize Swagger documentation
+swagger_config = {
+    "headers": [],
+    "specs": [
+        {
+            "endpoint": "apispec",
+            "route": "/apispec.json",
+            "rule_filter": lambda rule: True,  # all in
+            "model_filter": lambda tag: True,  # all in
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    "swagger_ui": True,
+    "specs_route": "/swagger/"
+}
+
+swagger_template = {
+    "swagger": "2.0",
+    "info": {
+        "title": "Peachtree Bank API",
+        "description": "A simple REST API for Peachtree Bank",
+        "version": "1.0.0",
+        "contact": {
+            "name": "API Support",
+            "email": "support@peachtreebank.com"
+        }
+    },
+    "basePath": "/",
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "securityDefinitions": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+        }
+    },
+    "tags": [
+        {
+            "name": "Health",
+            "description": "Health check endpoints"
+        },
+        {
+            "name": "Transactions",
+            "description": "Transaction management endpoints"
+        }
+    ]
+}
+
+swagger = Swagger(app, config=swagger_config, template=swagger_template)
 
 # Initialize the database
 db.init_app(app)
@@ -64,6 +119,25 @@ def index():
 
 @app.route('/api/health', methods=['GET'])
 @limiter.limit("10 per minute")  # Custom rate limit for health endpoint
+@swag_from({
+    "tags": ["Health"],
+    "summary": "Health check endpoint",
+    "description": "Returns the health status of the API",
+    "responses": {
+        "200": {
+            "description": "API is healthy",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "healthy"
+                    }
+                }
+            }
+        }
+    }
+})
 def health_check():
     """Health check endpoint to verify the API is running."""
     return jsonify({"status": "healthy"})
@@ -71,6 +145,76 @@ def health_check():
 
 @app.route('/api/transactions', methods=['GET'])
 @limiter.limit("30 per minute")
+@swag_from({
+    "tags": ["Transactions"],
+    "summary": "Get all transactions",
+    "description": "Returns a list of all transactions in the database",
+    "parameters": [
+        {
+            "name": "limit",
+            "in": "query",
+            "type": "integer",
+            "description": "Maximum number of transactions to return",
+            "default": 100,
+            "required": False
+        },
+        {
+            "name": "offset",
+            "in": "query",
+            "type": "integer",
+            "description": "Number of transactions to skip",
+            "default": 0,
+            "required": False
+        }
+    ],
+    "responses": {
+        "200": {
+            "description": "List of transactions",
+            "schema": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer",
+                            "example": 1
+                        },
+                        "date": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2025-02-27T11:00:00.000Z"
+                        },
+                        "amount": {
+                            "type": "string",
+                            "example": "100.00"
+                        },
+                        "from_account_id": {
+                            "type": "integer",
+                            "example": 1
+                        },
+                        "to_account_id": {
+                            "type": "integer",
+                            "example": 2
+                        },
+                        "beneficiary": {
+                            "type": "string",
+                            "example": "John Doe"
+                        },
+                        "state": {
+                            "type": "string",
+                            "enum": ["pending", "completed", "failed", "cancelled"],
+                            "example": "pending"
+                        },
+                        "description": {
+                            "type": "string",
+                            "example": "Monthly rent payment"
+                        }
+                    }
+                }
+            }
+        }
+    }
+})
 def get_transactions():
     """Get all transactions.
     
@@ -111,6 +255,126 @@ def get_transactions():
 
 @app.route('/api/transactions', methods=['POST'])
 @limiter.limit("30 per minute")
+@swag_from({
+    "tags": ["Transactions"],
+    "summary": "Create a new transaction",
+    "description": "Creates a new transaction between accounts",
+    "parameters": [
+        {
+            "name": "body",
+            "in": "body",
+            "required": True,
+            "schema": {
+                "type": "object",
+                "required": ["from_account_id", "to_account_id", "amount", "beneficiary"],
+                "properties": {
+                    "from_account_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "to_account_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "amount": {
+                        "type": "string",
+                        "example": "100.00"
+                    },
+                    "beneficiary": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Monthly rent payment"
+                    }
+                }
+            }
+        }
+    ],
+    "responses": {
+        "201": {
+            "description": "Transaction created successfully",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-02-27T11:00:00.000Z"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "example": "100.00"
+                    },
+                    "from_account_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "to_account_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "beneficiary": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": ["pending", "completed", "failed", "cancelled"],
+                        "example": "pending"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Monthly rent payment"
+                    }
+                }
+            }
+        },
+        "400": {
+            "description": "Validation error",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "example": "ValidationError"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Request validation failed"
+                    },
+                    "details": {
+                        "type": "object",
+                        "example": {
+                            "amount": ["Amount must be a positive number"]
+                        }
+                    }
+                }
+            }
+        },
+        "404": {
+            "description": "Account not found",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "example": "ResourceNotFoundError"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Account not found"
+                    }
+                }
+            }
+        }
+    }
+})
 def create_transaction():
     """Create a new transaction.
     

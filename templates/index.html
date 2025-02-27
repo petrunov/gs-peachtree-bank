@@ -46,6 +46,12 @@
 
     <div class="endpoint">
       <span class="method">GET</span>
+      <a href="/swagger/" class="path">/swagger/</a> - Interactive API
+      documentation
+    </div>
+
+    <div class="endpoint">
+      <span class="method">GET</span>
       <a href="/api/health" class="path">/api/health</a> - Health check endpoint
     </div>
 
@@ -60,6 +66,35 @@
       <a href="/api/transactions" class="path">/api/transactions</a> - Create a
       new transaction
     </div>
+
+    <h2>API Documentation</h2>
+    <p>
+      The API provides interactive documentation using Swagger UI, which allows
+      you to explore and test the API endpoints directly from your browser.
+    </p>
+    <p>
+      To access the Swagger documentation, navigate to
+      <a href="/swagger/">/swagger/</a>. The Swagger UI provides:
+    </p>
+    <ul>
+      <li>A list of all available endpoints</li>
+      <li>
+        Detailed information about request parameters and response formats
+      </li>
+      <li>The ability to try out API calls directly from the browser</li>
+      <li>Schema definitions for request and response objects</li>
+    </ul>
+
+    <h2>Cross-Origin Resource Sharing (CORS)</h2>
+    <p>
+      The API supports Cross-Origin Resource Sharing (CORS) to allow frontend
+      applications to make requests to the API from different domains.
+    </p>
+    <p>
+      CORS is enabled for all API routes (<code>/api/*</code>) and currently
+      allows requests from any origin. In a production environment, this should
+      be restricted to specific domains.
+    </p>
 
     <h2>Error Handling</h2>
     <p>All API errors return a consistent JSON response format:</p>

@@ -111,6 +111,50 @@ The API includes several features for robustness and security:
 6. **Database Integration** - SQLite database with SQLAlchemy ORM
 7. **Database Migrations** - Managed with Flask-Migrate
 8. **Context Managers** - Safe database transaction handling
+9. **CORS Support** - Cross-Origin Resource Sharing for frontend applications
+10. **OpenAPI Documentation** - Swagger UI for API exploration and testing
+
+## API Documentation
+
+The API provides interactive documentation using Swagger UI, which allows you to explore and test the API endpoints directly from your browser.
+
+### Swagger Documentation
+
+To access the Swagger documentation:
+
+1. Run the application:
+
+   ```
+   python app.py
+   ```
+
+2. Navigate to the Swagger UI:
+   ```
+   http://127.0.0.1:5000/swagger/
+   ```
+
+The Swagger UI provides:
+
+- A list of all available endpoints
+- Detailed information about request parameters and response formats
+- The ability to try out API calls directly from the browser
+- Schema definitions for request and response objects
+
+## Cross-Origin Resource Sharing (CORS)
+
+The API supports Cross-Origin Resource Sharing (CORS) to allow frontend applications to make requests to the API from different domains.
+
+CORS is enabled for all API routes (`/api/*`) and currently allows requests from any origin (`*`). In a production environment, you should restrict this to specific domains.
+
+To modify CORS settings, update the CORS configuration in `app.py`:
+
+```python
+# Allow requests from specific origins
+CORS(app, resources={r"/api/*": {"origins": "http://your-frontend-domain.com"}})
+
+# Allow requests from multiple origins
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "https://your-app.com"]}})
+```
 
 ## Rate Limiting
 
