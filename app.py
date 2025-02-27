@@ -10,7 +10,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from schemas import validate_request, TransactionSchema, TransactionQuerySchema, TransactionUpdateSchema
 from flask_migrate import Migrate
-from models import db, Account, Transaction
+from models import db, Account, Transaction, TransactionState
 from db import db_transaction, get_or_404
 from decimal import Decimal
 from config import get_config
@@ -415,8 +415,8 @@ def search():
                         },
                         "state": {
                             "type": "string",
-                            "enum": ["pending", "completed", "failed", "cancelled"],
-                            "example": "pending"
+                            "enum": [state.value for state in TransactionState],
+                            "example": TransactionState.SENT.value
                         },
                         "description": {
                             "type": "string",
@@ -550,8 +550,8 @@ def get_transactions():
                     },
                     "state": {
                         "type": "string",
-                        "enum": ["pending", "completed", "failed", "cancelled"],
-                        "example": "pending"
+                        "enum": [state.value for state in TransactionState],
+                        "example": TransactionState.SENT.value
                     },
                     "description": {
                         "type": "string",
@@ -625,8 +625,8 @@ def get_transaction(transaction_id):
                 "properties": {
                     "state": {
                         "type": "string",
-                        "enum": ["pending", "completed", "failed", "cancelled"],
-                        "example": "completed"
+                        "enum": [state.value for state in TransactionState],
+                        "example": TransactionState.PAID.value
                     }
                 }
             }
@@ -665,8 +665,8 @@ def get_transaction(transaction_id):
                     },
                     "state": {
                         "type": "string",
-                        "enum": ["pending", "completed", "failed", "cancelled"],
-                        "example": "completed"
+                        "enum": [state.value for state in TransactionState],
+                        "example": TransactionState.PAID.value
                     },
                     "description": {
                         "type": "string",
@@ -691,7 +691,7 @@ def get_transaction(transaction_id):
                     "details": {
                         "type": "object",
                         "example": {
-                            "state": ["State must be one of: pending, completed, failed, cancelled"]
+                            "state": ["State must be one of: sent, received, paid"]
                         }
                     }
                 }
@@ -724,7 +724,7 @@ def update_transaction(transaction_id):
     - transaction_id: ID of the transaction to update
     
     Request body:
-    - state: New state for the transaction (pending, completed, failed, cancelled)
+    - state: New state for the transaction (sent, received, paid)
     """
     # Get JSON data from request
     data = request.get_json()
@@ -826,8 +826,8 @@ def update_transaction(transaction_id):
                     },
                     "state": {
                         "type": "string",
-                        "enum": ["pending", "completed", "failed", "cancelled"],
-                        "example": "pending"
+                        "enum": [state.value for state in TransactionState],
+                        "example": TransactionState.SENT.value
                     },
                     "description": {
                         "type": "string",
@@ -914,7 +914,7 @@ def create_transaction():
             from_account_id=from_account.id,
             to_account_id=to_account.id,
             beneficiary=validated_data['beneficiary'],
-            state='pending',
+            state=TransactionState.SENT.value,
             description=validated_data.get('description', '')
         )
         db.session.add(transaction)

@@ -5,6 +5,7 @@ Defines schemas for request validation using marshmallow.
 from marshmallow import Schema, fields, validate, ValidationError, validates_schema
 from decimal import Decimal
 import re
+from models import TransactionState
 
 
 class AccountSchema(Schema):
@@ -62,8 +63,8 @@ class TransactionSchema(Schema):
     )
     state = fields.String(
         validate=validate.OneOf(
-            ["pending", "completed", "failed", "cancelled"],
-            error="State must be one of: pending, completed, failed, cancelled"
+            [state.value for state in TransactionState],
+            error=f"State must be one of: {', '.join([state.value for state in TransactionState])}"
         )
     )
     
@@ -79,8 +80,8 @@ class TransactionUpdateSchema(Schema):
     state = fields.String(
         required=True,
         validate=validate.OneOf(
-            ["pending", "completed", "failed", "cancelled"],
-            error="State must be one of: pending, completed, failed, cancelled"
+            [state.value for state in TransactionState],
+            error=f"State must be one of: {', '.join([state.value for state in TransactionState])}"
         )
     )
 

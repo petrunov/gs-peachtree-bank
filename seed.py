@@ -5,7 +5,7 @@ Populates the database with initial data.
 import random
 from datetime import datetime, timedelta
 from app import app, db
-from models import Account, Transaction
+from models import Account, Transaction, TransactionState
 
 
 def generate_account_number():
@@ -59,10 +59,10 @@ def seed_database():
     transactions = []
     
     # Transaction states
-    states = ['pending', 'completed', 'failed', 'cancelled']
+    states = [state.value for state in TransactionState]
     
     # Generate transactions between accounts
-    for _ in range(20):
+    for _ in range(10):  # Reduced by half
         # Select random from and to accounts
         from_account = random.choice(accounts)
         to_account = random.choice([a for a in accounts if a != from_account])
@@ -77,7 +77,7 @@ def seed_database():
         # Random state with weighted probability
         state = random.choices(
             states, 
-            weights=[0.2, 0.6, 0.1, 0.1],  # 60% completed, 20% pending, 10% failed, 10% cancelled
+            weights=[0.4, 0.3, 0.3],  # 40% sent, 30% received, 30% paid
             k=1
         )[0]
         

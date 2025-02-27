@@ -2,9 +2,21 @@
 Database models for the Peachtree Bank API.
 """
 from datetime import datetime
+from enum import Enum
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Enum as SQLAlchemyEnum
 
 db = SQLAlchemy()
+
+
+class TransactionState(str, Enum):
+    """Enum representing the possible states of a transaction."""
+    SENT = 'sent'
+    RECEIVED = 'received'
+    PAID = 'paid'
+    
+    def __str__(self):
+        return self.value
 
 
 class Account(db.Model):
@@ -43,7 +55,7 @@ class Transaction(db.Model):
     from_account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
     to_account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
     beneficiary = db.Column(db.String(100), nullable=False)
-    state = db.Column(db.String(20), default='pending')  # pending, completed, failed, cancelled
+    state = db.Column(SQLAlchemyEnum(TransactionState), default=TransactionState.SENT)
     description = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
