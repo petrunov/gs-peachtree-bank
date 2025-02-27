@@ -49,6 +49,18 @@
       <a href="/api/health" class="path">/api/health</a> - Health check endpoint
     </div>
 
+    <div class="endpoint">
+      <span class="method">GET</span>
+      <a href="/api/transactions" class="path">/api/transactions</a> - Get all
+      transactions
+    </div>
+
+    <div class="endpoint">
+      <span class="method">POST</span>
+      <a href="/api/transactions" class="path">/api/transactions</a> - Create a
+      new transaction
+    </div>
+
     <h2>Error Handling</h2>
     <p>All API errors return a consistent JSON response format:</p>
 
@@ -116,5 +128,21 @@
       All request data is validated to ensure it conforms to expected formats
       and constraints before processing.
     </p>
+
+    <h2>Database</h2>
+    <p>The API uses SQLite with SQLAlchemy ORM for data persistence:</p>
+    <ul>
+      <li>
+        <strong>Account</strong> - Bank accounts with account number, name, and
+        balance
+      </li>
+      <li>
+        <strong>Transaction</strong> - Money transfers between accounts with
+        amount, beneficiary, and state
+      </li>
+    </ul>
+
+    <h3>Context Managers</h3>
+    <p>The API provides context managers for safe database operations</p>
   </body>
 </html>

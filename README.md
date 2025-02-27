@@ -29,6 +29,54 @@ The API will be available at http://127.0.0.1:5000/
 
 - `GET /` - HTML page listing all available API endpoints
 - `GET /api/health` - Health check endpoint
+- `GET /api/transactions` - Get all transactions
+- `POST /api/transactions` - Create a new transaction
+
+### Transaction Endpoints
+
+#### List Transactions
+
+The GET endpoint allows you to retrieve a list of all transactions:
+
+```
+GET /api/transactions
+GET /api/transactions?limit=10&offset=0
+```
+
+This endpoint:
+
+1. Returns a list of all transactions in the database
+2. Supports pagination with limit and offset parameters
+3. Orders transactions by date (newest first)
+4. Returns a maximum of 100 transactions per request
+
+#### Create Transaction
+
+The POST endpoint allows you to create new transactions between accounts:
+
+```
+POST /api/transactions
+Content-Type: application/json
+
+{
+  "from_account_id": 1,
+  "to_account_id": 2,
+  "amount": "100.00",
+  "beneficiary": "John Doe",
+  "description": "Monthly rent payment"
+}
+```
+
+This will:
+
+1. Validate the request data
+2. Check if both accounts exist
+3. Verify sufficient funds in the source account
+4. Create a transaction record with "pending" state
+5. Update the balances of both accounts
+6. Return the created transaction with a 201 status code
+
+All of these operations are performed within a transaction context manager to ensure atomicity.
 
 ## Error Handling
 
@@ -60,6 +108,9 @@ The API includes several features for robustness and security:
 3. **Exception Handling Decorator** - Provides consistent error handling for route functions
 4. **Rate Limiting** - Prevents abuse by limiting the number of requests clients can make
 5. **Request Validation** - Validates incoming request data using Marshmallow schemas
+6. **Database Integration** - SQLite database with SQLAlchemy ORM
+7. **Database Migrations** - Managed with Flask-Migrate
+8. **Context Managers** - Safe database transaction handling
 
 ## Rate Limiting
 
@@ -99,3 +150,61 @@ Validation is implemented using:
 - **Marshmallow schemas** - Define the expected structure and constraints for request data
 - **Custom validation functions** - Handle complex validation logic
 - **Integration with error handling** - Provides consistent error responses for validation failures
+
+## Database Setup
+
+The API uses SQLite with SQLAlchemy ORM for data persistence:
+
+1. **Initialize the database**:
+
+   ```
+   python migrations.py
+   ```
+
+2. **Seed the database with sample data**:
+   ```
+   python seed.py
+   ```
+
+### Database Models
+
+- **Account** - Bank accounts with account number, name, and balance
+- **Transaction** - Money transfers between accounts with amount, beneficiary, and state
+
+### Context Managers
+
+The API provides context managers for safe database operations:
+
+```python
+# Using db_session for general database operations
+with db_session() as session:
+    new_account = Account(
+        account_number="1234567890",
+        account_name="John Doe Checking",
+        balance=1000.00
+    )
+    session.add(new_account)
+    # No need to commit - it's done automatically
+
+# Using db_transaction for operations that must be atomic
+with db_transaction():
+    # Transfer money between accounts
+    transaction = Transaction(
+        amount=100.00,
+        from_account_id=1,
+        to_account_id=2,
+        beneficiary="Jane Smith",
+        state="pending"
+    )
+    db.session.add(transaction)
+
+    # Update account balances
+    from_account.balance -= 100.00
+    to_account.balance += 100.00
+```
+
+These context managers ensure that database operations are performed safely:
+
+- Automatically commit changes when operations succeed
+- Automatically roll back changes when errors occur
+- Convert database errors to consistent API error responses
