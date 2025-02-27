@@ -44,14 +44,17 @@ The API implements a comprehensive error handling system that provides consisten
 
 ### Error Types
 
-- `NotFound` (404) - The requested resource doesn't exist
+- `ResourceNotFoundError` (404) - When a requested resource is not found
+- `ValidationError` (400) - When request validation fails
+- `AuthorizationError` (401) - When authorization fails
 - `MethodNotAllowed` (405) - The HTTP method is not allowed for the requested URL
 - `InternalServerError` (500) - An unexpected server error occurred
+- `UnexpectedError` (500) - Catch-all for any unhandled exceptions
 
-### Custom Exceptions
+### Exception Handling Features
 
-The API includes custom exception classes that can be raised in route handlers:
+The API includes several exception handling features:
 
-- `ResourceNotFoundError` - When a requested resource is not found
-- `ValidationError` - When request validation fails
-- `AuthorizationError` - When authorization fails
+1. **Global Exception Handler** - Catches and logs any unexpected exceptions
+2. **Request/Response Logging** - Logs all incoming requests and outgoing responses
+3. **Exception Handling Decorator** - Provides consistent error handling for route functions

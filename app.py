@@ -1,10 +1,29 @@
-from flask import Flask, jsonify, render_template
+import logging
+from flask import Flask, jsonify, render_template, request
 from errors import register_error_handlers
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 app = Flask(__name__)
 
 # Register error handlers
 register_error_handlers(app)
+
+# Request/Response logging middleware
+@app.before_request
+def log_request():
+    """Log the incoming request"""
+    app.logger.info(f"Request: {request.method} {request.path}")
+
+@app.after_request
+def log_response(response):
+    """Log the response"""
+    app.logger.info(f"Response: {response.status_code}")
+    return response
 
 @app.route('/', methods=['GET'])
 def index():

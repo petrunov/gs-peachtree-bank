@@ -2,6 +2,8 @@
 Error handling module for the Flask API.
 Defines custom exception classes and error handlers.
 """
+import logging
+from functools import wraps
 from flask import jsonify
 
 
@@ -30,6 +32,32 @@ class AuthorizationError(APIError):
     """Raised when authorization fails"""
     def __init__(self, message="Unauthorized", payload=None):
         super().__init__(message, status_code=401, payload=payload)
+
+
+def handle_exceptions(app):
+    """Decorator for standardizing exception handling in route functions.
+    
+    Usage:
+        @app.route('/api/endpoint')
+        @handle_exceptions(app)
+        def my_route():
+            # Route implementation
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            try:
+                return f(*args, **kwargs)
+            except APIError:
+                # Let our custom exceptions pass through to be handled by the registered handler
+                raise
+            except Exception as e:
+                # Log the error
+                app.logger.error(f"Unhandled exception in {f.__name__}: {str(e)}")
+                # Convert to APIError
+                raise APIError("An unexpected error occurred", status_code=500)
+        return decorated_function
+    return decorator
 
 
 def register_error_handlers(app):
@@ -67,5 +95,14 @@ def register_error_handlers(app):
         """Handler for 500 errors"""
         return jsonify({
             "error": "InternalServerError", 
+            "message": "An unexpected error occurred"
+        }), 500
+        
+    @app.errorhandler(Exception)
+    def handle_unexpected_error(error):
+        """Handler for unexpected exceptions"""
+        app.logger.error('Unexpected error: %s', str(error))
+        return jsonify({
+            "error": "UnexpectedError",
             "message": "An unexpected error occurred"
         }), 500
