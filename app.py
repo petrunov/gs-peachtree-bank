@@ -8,7 +8,7 @@ from flasgger import Swagger, swag_from
 from errors import register_error_handlers, ValidationError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from schemas import validate_request, TransactionSchema
+from schemas import validate_request, TransactionSchema, TransactionQuerySchema
 from flask_migrate import Migrate
 from models import db, Account, Transaction
 from db import db_transaction, get_or_404
@@ -227,13 +227,17 @@ def get_transactions():
     - limit: Maximum number of transactions to return (default: 100)
     - offset: Number of transactions to skip (default: 0)
     """
-    # Get query parameters
-    limit = request.args.get('limit', 100, type=int)
-    offset = request.args.get('offset', 0, type=int)
+    # Validate query parameters
+    query_params = {}
+    if request.args.get('limit'):
+        query_params['limit'] = request.args.get('limit')
+    if request.args.get('offset'):
+        query_params['offset'] = request.args.get('offset')
     
-    # Limit the maximum number of transactions to return
-    if limit > 100:
-        limit = 100
+    # Validate and get parameters
+    validated_params = validate_request(TransactionQuerySchema(), query_params)
+    limit = validated_params.get('limit', 100)
+    offset = validated_params.get('offset', 0)
     
     # Query transactions with pagination
     transactions = Transaction.query.order_by(Transaction.date.desc()).limit(limit).offset(offset).all()
@@ -401,10 +405,6 @@ def create_transaction():
     # Get the accounts
     from_account = get_or_404(Account, validated_data['from_account_id'])
     to_account = get_or_404(Account, validated_data['to_account_id'])
-    
-    # Check if accounts are different
-    if from_account.id == to_account.id:
-        raise ValidationError("Source and destination accounts must be different")
     
     # Check if source account has sufficient funds
     amount = Decimal(str(validated_data['amount']))
