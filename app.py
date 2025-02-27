@@ -79,8 +79,8 @@ swagger_template = {
             "description": "Health check endpoints"
         },
         {
-            "name": "Accounts",
-            "description": "Account management endpoints"
+            "name": "Search",
+            "description": "Search endpoints"
         },
         {
             "name": "Transactions",
@@ -150,18 +150,25 @@ def health_check():
     """Health check endpoint to verify the API is running."""
     return jsonify({"status": "healthy"})
 
-@app.route('/api/accounts', methods=['GET'])
+@app.route('/api/search', methods=['GET'])
 @limiter.limit("30 per minute")
 @swag_from({
-    "tags": ["Accounts"],
-    "summary": "Get all accounts",
-    "description": "Returns a list of all accounts in the database",
+    "tags": ["Search"],
+    "summary": "Search accounts and transactions",
+    "description": "Search for accounts and transactions by query string",
     "parameters": [
+        {
+            "name": "q",
+            "in": "query",
+            "type": "string",
+            "description": "Search query",
+            "required": True
+        },
         {
             "name": "limit",
             "in": "query",
             "type": "integer",
-            "description": "Maximum number of accounts to return",
+            "description": "Maximum number of results to return",
             "default": 100,
             "required": False
         },
@@ -169,175 +176,159 @@ def health_check():
             "name": "offset",
             "in": "query",
             "type": "integer",
-            "description": "Number of accounts to skip",
+            "description": "Number of results to skip",
             "default": 0,
             "required": False
         }
     ],
     "responses": {
         "200": {
-            "description": "List of accounts",
+            "description": "Search results",
             "schema": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "id": {
-                            "type": "integer",
-                            "example": 1
-                        },
-                        "account_number": {
-                            "type": "string",
-                            "example": "1234567890"
-                        },
-                        "account_name": {
-                            "type": "string",
-                            "example": "John Doe Checking"
-                        },
-                        "balance": {
-                            "type": "string",
-                            "example": "5000.00"
-                        },
-                        "currency": {
-                            "type": "string",
-                            "example": "USD"
-                        },
-                        "created_at": {
-                            "type": "string",
-                            "format": "date-time",
-                            "example": "2025-02-27T11:00:00.000Z"
+                "type": "object",
+                "properties": {
+                    "accounts": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "account_number": {
+                                    "type": "string",
+                                    "example": "1234567890"
+                                },
+                                "account_name": {
+                                    "type": "string",
+                                    "example": "John Doe Checking"
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "example": "account"
+                                }
+                            }
+                        }
+                    },
+                    "transactions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "date": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "example": "2025-02-27T11:00:00.000Z"
+                                },
+                                "amount": {
+                                    "type": "string",
+                                    "example": "100.00"
+                                },
+                                "beneficiary": {
+                                    "type": "string",
+                                    "example": "John Doe"
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "example": "Monthly rent payment"
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "example": "transaction"
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
-    }
-})
-def get_accounts():
-    """Get all accounts.
-    
-    Returns a list of all accounts in the database.
-    
-    Query parameters:
-    - limit: Maximum number of accounts to return (default: 100)
-    - offset: Number of accounts to skip (default: 0)
-    """
-    # Validate query parameters
-    query_params = {}
-    if request.args.get('limit'):
-        query_params['limit'] = request.args.get('limit')
-    if request.args.get('offset'):
-        query_params['offset'] = request.args.get('offset')
-    
-    # Validate and get parameters
-    validated_params = validate_request(TransactionQuerySchema(), query_params)
-    limit = validated_params.get('limit', 100)
-    offset = validated_params.get('offset', 0)
-    
-    # Query accounts with pagination
-    accounts = Account.query.limit(limit).offset(offset).all()
-    
-    # Format the response
-    result = []
-    for account in accounts:
-        result.append({
-            "id": account.id,
-            "account_number": account.account_number,
-            "account_name": account.account_name,
-            "balance": str(account.balance),
-            "currency": account.currency,
-            "created_at": account.created_at.isoformat()
-        })
-    
-    # Return the accounts
-    return jsonify(result)
-
-@app.route('/api/accounts/<int:account_id>', methods=['GET'])
-@limiter.limit("30 per minute")
-@swag_from({
-    "tags": ["Accounts"],
-    "summary": "Get account details",
-    "description": "Returns details for a specific account",
-    "parameters": [
-        {
-            "name": "account_id",
-            "in": "path",
-            "type": "integer",
-            "description": "ID of the account to retrieve",
-            "required": True
-        }
-    ],
-    "responses": {
-        "200": {
-            "description": "Account details",
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "account_number": {
-                        "type": "string",
-                        "example": "1234567890"
-                    },
-                    "account_name": {
-                        "type": "string",
-                        "example": "John Doe Checking"
-                    },
-                    "balance": {
-                        "type": "string",
-                        "example": "5000.00"
-                    },
-                    "currency": {
-                        "type": "string",
-                        "example": "USD"
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2025-02-27T11:00:00.000Z"
-                    }
-                }
-            }
         },
-        "404": {
-            "description": "Account not found",
+        "400": {
+            "description": "Validation error",
             "schema": {
                 "type": "object",
                 "properties": {
                     "error": {
                         "type": "string",
-                        "example": "ResourceNotFoundError"
+                        "example": "ValidationError"
                     },
                     "message": {
                         "type": "string",
-                        "example": "Account not found"
+                        "example": "Search query is required"
                     }
                 }
             }
         }
     }
 })
-def get_account(account_id):
-    """Get a specific account by ID.
+def search():
+    """Search for accounts and transactions.
     
-    Returns details for a specific account.
+    Returns accounts and transactions that match the search query.
     
-    Path parameters:
-    - account_id: ID of the account to retrieve
+    Query parameters:
+    - q: Search query (required)
+    - limit: Maximum number of results to return (default: 100)
+    - offset: Number of results to skip (default: 0)
     """
-    # Get the account
-    account = get_or_404(Account, account_id)
+    # Get query parameters
+    query = request.args.get('q')
+    if not query:
+        raise ValidationError("Search query is required")
     
-    # Return the account details
+    limit = request.args.get('limit', 100, type=int)
+    offset = request.args.get('offset', 0, type=int)
+    
+    # Limit the maximum number of results to return
+    if limit > 100:
+        limit = 100
+    
+    # Search for accounts
+    search_term = f"%{query}%"
+    accounts = Account.query.filter(
+        or_(
+            Account.account_number.ilike(search_term),
+            Account.account_name.ilike(search_term)
+        )
+    ).limit(limit).offset(offset).all()
+    
+    # Search for transactions
+    transactions = Transaction.query.filter(
+        or_(
+            Transaction.beneficiary.ilike(search_term),
+            Transaction.description.ilike(search_term)
+        )
+    ).limit(limit).offset(offset).all()
+    
+    # Format the response
+    account_results = []
+    for account in accounts:
+        account_results.append({
+            "id": account.id,
+            "account_number": account.account_number,
+            "account_name": account.account_name,
+            "type": "account"
+        })
+    
+    transaction_results = []
+    for transaction in transactions:
+        transaction_results.append({
+            "id": transaction.id,
+            "date": transaction.date.isoformat(),
+            "amount": str(transaction.amount),
+            "beneficiary": transaction.beneficiary,
+            "description": transaction.description,
+            "type": "transaction"
+        })
+    
+    # Return the search results
     return jsonify({
-        "id": account.id,
-        "account_number": account.account_number,
-        "account_name": account.account_name,
-        "balance": str(account.balance),
-        "currency": account.currency,
-        "created_at": account.created_at.isoformat()
+        "accounts": account_results,
+        "transactions": transaction_results
     })
 
 @app.route('/api/transactions', methods=['GET'])
