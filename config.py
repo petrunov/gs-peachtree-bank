@@ -55,7 +55,18 @@ config = {
 }
 
 
-def get_config():
-    """Get the configuration based on the environment."""
+def get_config(config_name=None):
+    """Get the configuration based on the environment or specified name.
+    
+    Args:
+        config_name: Optional name of the configuration to use.
+                    If not provided, will use FLASK_ENV environment variable.
+    
+    Returns:
+        The configuration class.
+    """
+    if config_name:
+        return config.get(config_name, config['default'])
+    
     env = os.environ.get('FLASK_ENV', 'development')  # Development is default
     return config.get(env, config['default'])
