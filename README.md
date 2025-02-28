@@ -43,8 +43,6 @@ The API will be available at http://127.0.0.1:5000/
 
 - `GET /swagger` - HTML page listing all available API endpoints
 - `GET /api/health` - Health check endpoint
-- `GET /api/transactions` - Get all transactions
-- `POST /api/transactions` - Create a new transaction
 
 ### Transaction Endpoints
 
@@ -212,11 +210,6 @@ Available environment variables:
 - `DATABASE_URL` - Database connection URL
 - `RATELIMIT_STORAGE_URI` - Storage URI for rate limiting
 - `LOG_LEVEL` - Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-
-### Database Models
-
-- **Account** - Bank accounts with account number, name, and balance
-- **Transaction** - Money transfers between accounts with amount, beneficiary, and state
 
 ### Context Managers
 
