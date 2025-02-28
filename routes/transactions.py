@@ -6,7 +6,7 @@ from flasgger import swag_from
 from sqlalchemy import or_, desc, asc
 from decimal import Decimal
 
-from models import Transaction, Account, TransactionState, db
+from models import Transaction, Account, TransactionState, TransactionType, db
 from schemas import validate_request, TransactionSchema, TransactionQuerySchema, TransactionUpdateSchema
 from errors import ValidationError
 from db import db_transaction, get_or_404
@@ -102,7 +102,8 @@ transactions_bp = Blueprint('transactions', __name__, url_prefix='/api')
                         },
                         "description": {
                             "type": "string",
-                            "example": "Monthly rent payment"
+                            "enum": [type.value for type in TransactionType],
+                            "example": TransactionType.TRANSACTION.value
                         }
                     }
                 }
@@ -238,7 +239,8 @@ def get_transactions():
                     },
                     "description": {
                         "type": "string",
-                        "example": "Monthly rent payment"
+                        "enum": [type.value for type in TransactionType],
+                        "example": TransactionType.TRANSACTION.value
                     }
                 }
             }
@@ -352,7 +354,8 @@ def get_transaction(transaction_id):
                     },
                     "description": {
                         "type": "string",
-                        "example": "Monthly rent payment"
+                        "enum": [type.value for type in TransactionType],
+                        "example": TransactionType.TRANSACTION.value
                     }
                 }
             }
@@ -445,7 +448,7 @@ def update_transaction(transaction_id):
             "required": True,
             "schema": {
                 "type": "object",
-                "required": ["from_account_id", "to_account_id", "amount"],
+                "required": ["from_account_id", "to_account_id", "amount", "description"],
                 "properties": {
                     "from_account_id": {
                         "type": "integer",
@@ -461,7 +464,8 @@ def update_transaction(transaction_id):
                     },
                     "description": {
                         "type": "string",
-                        "example": "Monthly rent payment"
+                        "enum": [type.value for type in TransactionType],
+                        "example": TransactionType.TRANSACTION.value
                     }
                 }
             }
@@ -505,7 +509,8 @@ def update_transaction(transaction_id):
                     },
                     "description": {
                         "type": "string",
-                        "example": "Monthly rent payment"
+                        "enum": [type.value for type in TransactionType],
+                        "example": TransactionType.TRANSACTION.value
                     }
                 }
             }
@@ -557,7 +562,7 @@ def create_transaction():
     - from_account_id: ID of the source account
     - to_account_id: ID of the destination account
     - amount: Amount to transfer
-    - description: Optional description
+    - description: Transaction type (Card Payments, Transaction, Online transfer)
     
     Returns the created transaction.
     """

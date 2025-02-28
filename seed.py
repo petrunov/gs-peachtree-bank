@@ -4,8 +4,8 @@ Populates the database with initial data.
 """
 import random
 from datetime import datetime, timedelta
-from app import app, db
-from models import Account, Transaction, TransactionState
+from app import app
+from models import db, Account, Transaction, TransactionState, TransactionType
 
 
 def generate_account_number():
@@ -81,16 +81,11 @@ def seed_database():
             k=1
         )[0]
         
-        # Random description
+        # Random description from TransactionType enum
         descriptions = [
-            "Monthly transfer",
-            "Bill payment",
-            "Rent payment",
-            "Salary deposit",
-            "Investment transfer",
-            "Loan repayment",
-            "Subscription payment",
-            "Insurance premium"
+            TransactionType.CARD_PAYMENT.value,
+            TransactionType.TRANSACTION.value,
+            TransactionType.ONLINE_TRANSFER.value
         ]
         description = random.choice(descriptions)
         
@@ -100,7 +95,6 @@ def seed_database():
             amount=amount,
             from_account_id=from_account.id,
             to_account_id=to_account.id,
-            beneficiary=to_account.account_name.split()[0] + " " + to_account.account_name.split()[1],
             state=state,
             description=description
         )

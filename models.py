@@ -19,6 +19,16 @@ class TransactionState(str, Enum):
         return self.value
 
 
+class TransactionType(str, Enum):
+    """Enum representing the possible types of a transaction."""
+    CARD_PAYMENT = 'Card Payments'
+    TRANSACTION = 'Transaction'
+    ONLINE_TRANSFER = 'Online transfer'
+    
+    def __str__(self):
+        return self.value
+
+
 class Account(db.Model):
     """Account model representing bank accounts."""
     id = db.Column(db.Integer, primary_key=True)
@@ -55,7 +65,7 @@ class Transaction(db.Model):
     from_account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
     to_account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
     state = db.Column(SQLAlchemyEnum(TransactionState), default=TransactionState.SENT)
-    description = db.Column(db.String(200))
+    description = db.Column(SQLAlchemyEnum(TransactionType), default=TransactionType.TRANSACTION, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

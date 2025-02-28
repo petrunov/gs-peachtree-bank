@@ -6,7 +6,7 @@ import re
 from decimal import Decimal
 
 from marshmallow import Schema, fields, validate, ValidationError, validates_schema
-from models import TransactionState
+from models import TransactionState, TransactionType
 from errors import ValidationError as APIValidationError
 
 
@@ -54,7 +54,11 @@ class TransactionSchema(Schema):
         validate=validate.Range(min=Decimal('0.01'), error="Amount must be greater than zero")
     )
     description = fields.String(
-        validate=validate.Length(max=200, error="Description cannot exceed 200 characters")
+        required=True,
+        validate=validate.OneOf(
+            [type.value for type in TransactionType],
+            error=f"Description must be one of: {', '.join([type.value for type in TransactionType])}"
+        )
     )
     state = fields.String(
         validate=validate.OneOf(
