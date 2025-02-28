@@ -54,11 +54,15 @@ class Transaction(db.Model):
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     from_account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
     to_account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
-    beneficiary = db.Column(db.String(100), nullable=False)
     state = db.Column(SQLAlchemyEnum(TransactionState), default=TransactionState.SENT)
     description = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    @property
+    def beneficiary(self):
+        """Get the beneficiary name from the to_account relationship."""
+        return self.to_account.account_name if self.to_account else None
     
     def __repr__(self):
         return f'<Transaction {self.id} {self.amount} {self.state}>'

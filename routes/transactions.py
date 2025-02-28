@@ -6,7 +6,7 @@ from flasgger import swag_from
 from sqlalchemy import or_, desc, asc
 from decimal import Decimal
 
-from models import Transaction, Account, TransactionState
+from models import Transaction, Account, TransactionState, db
 from schemas import validate_request, TransactionSchema, TransactionQuerySchema, TransactionUpdateSchema
 from errors import ValidationError
 from db import db_transaction, get_or_404
@@ -142,9 +142,9 @@ def get_transactions():
     # Apply search filter if provided
     if search:
         search_term = f"%{search}%"
-        query = query.filter(
+        query = query.join(Account, Transaction.to_account_id == Account.id).filter(
             or_(
-                Transaction.beneficiary.ilike(search_term),
+                Account.account_name.ilike(search_term),
                 Transaction.description.ilike(search_term)
             )
         )
@@ -155,7 +155,9 @@ def get_transactions():
     elif sort_by == 'amount':
         sort_column = Transaction.amount
     elif sort_by == 'beneficiary':
-        sort_column = Transaction.beneficiary
+        # Join with Account table to sort by account_name
+        query = query.join(Account, Transaction.to_account_id == Account.id)
+        sort_column = Account.account_name
     else:
         sort_column = Transaction.date
     
@@ -406,15 +408,12 @@ def update_transaction(transaction_id):
     Request body:
     - state: New state for the transaction (sent, received, paid)
     """
-    # Get JSON data from request
     data = request.get_json()
     if not data:
         raise ValidationError("No JSON data provided")
     
-    # Validate the request data
     validated_data = validate_request(TransactionUpdateSchema(), data)
     
-    # Get the transaction
     transaction = get_or_404(Transaction, transaction_id)
     
     # Update the transaction state
@@ -446,7 +445,7 @@ def update_transaction(transaction_id):
             "required": True,
             "schema": {
                 "type": "object",
-                "required": ["from_account_id", "to_account_id", "amount", "beneficiary"],
+                "required": ["from_account_id", "to_account_id", "amount"],
                 "properties": {
                     "from_account_id": {
                         "type": "integer",
@@ -459,10 +458,6 @@ def update_transaction(transaction_id):
                     "amount": {
                         "type": "string",
                         "example": "100.00"
-                    },
-                    "beneficiary": {
-                        "type": "string",
-                        "example": "John Doe"
                     },
                     "description": {
                         "type": "string",
@@ -562,7 +557,6 @@ def create_transaction():
     - from_account_id: ID of the source account
     - to_account_id: ID of the destination account
     - amount: Amount to transfer
-    - beneficiary: Name of the beneficiary
     - description: Optional description
     
     Returns the created transaction.
@@ -584,7 +578,6 @@ def create_transaction():
     if from_account.balance < amount:
         raise ValidationError("Insufficient funds in source account")
     
-    # Create the transaction
     with db_transaction():
         # Create transaction record
         transaction = Transaction(
@@ -592,7 +585,6 @@ def create_transaction():
             amount=amount,
             from_account_id=from_account.id,
             to_account_id=to_account.id,
-            beneficiary=validated_data['beneficiary'],
             state=TransactionState.SENT.value,
             description=validated_data.get('description', '')
         )

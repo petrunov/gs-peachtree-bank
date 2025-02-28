@@ -53,13 +53,6 @@ class TransactionSchema(Schema):
         as_string=True,
         validate=validate.Range(min=Decimal('0.01'), error="Amount must be greater than zero")
     )
-    beneficiary = fields.String(
-        required=True, 
-        validate=[
-            validate.Length(min=1, max=100, error="Beneficiary name must be between 1 and 100 characters"),
-            validate.Regexp(r'^[a-zA-Z0-9 ]+$', error="Beneficiary name can only contain letters, numbers, and spaces")
-        ]
-    )
     description = fields.String(
         validate=validate.Length(max=200, error="Description cannot exceed 200 characters")
     )
