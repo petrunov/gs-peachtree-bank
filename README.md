@@ -18,23 +18,16 @@ A simple REST API built with Flask for Peachtree Bank.
    pip install -r requirements.txt
    ```
 
-3. Configure environment (optional):
+3. Initialize and seed the database:
 
    ```
-   cp .env.example .env
-   # Edit .env file with your settings
-   ```
-
-4. Initialize and seed the database:
-
-   ```
-   python migrations.py
+   flask db upgrade
    python seed.py
    ```
 
-5. Run the application:
+4. Run the application:
    ```
-   python app.py
+   flask run
    ```
 
 The API will be available at http://127.0.0.1:5000/
