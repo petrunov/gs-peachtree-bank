@@ -194,17 +194,6 @@ The API supports different configurations for different environments (developmen
   - Detailed logging
   - SQLite database
 
-- **TestingConfig** - Used for running tests
-
-  - Testing mode enabled
-  - In-memory SQLite database
-  - Rate limiting disabled
-
-- **ProductionConfig** - Used for production deployment
-  - Debug mode disabled
-  - Minimal logging
-  - Environment variables required for sensitive settings
-
 ### Environment Variables
 
 You can customize the configuration by setting environment variables. The easiest way is to create a `.env` file in the project root:
@@ -231,36 +220,7 @@ Available environment variables:
 
 ### Context Managers
 
-The API provides context managers for safe database operations:
-
-```python
-# Using db_session for general database operations
-with db_session() as session:
-    new_account = Account(
-        account_number="1234567890",
-        account_name="John Doe Checking",
-        balance=1000.00
-    )
-    session.add(new_account)
-    # No need to commit - it's done automatically
-
-# Using db_transaction for operations that must be atomic
-with db_transaction():
-    # Transfer money between accounts
-    transaction = Transaction(
-        amount=100.00,
-        from_account_id=1,
-        to_account_id=2,
-        beneficiary="Jane Smith",
-        state="pending"
-    )
-    db.session.add(transaction)
-
-    # Update account balances
-    from_account.balance -= 100.00
-    to_account.balance += 100.00
-```
-
+The API provides context managers for safe database operations.
 These context managers ensure that database operations are performed safely:
 
 - Automatically commit changes when operations succeed
