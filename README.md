@@ -44,24 +44,6 @@ The API will be available at http://127.0.0.1:5000/
 - `GET /swagger` - HTML page listing all available API endpoints
 - `GET /api/health` - Health check endpoint
 
-### Transaction Endpoints
-
-#### List Transactions
-
-The GET endpoint allows you to retrieve a list of all transactions:
-
-```
-GET /api/transactions
-GET /api/transactions?limit=10&offset=0
-```
-
-This endpoint:
-
-1. Returns a list of all transactions in the database
-2. Supports pagination with limit and offset parameters
-3. Orders transactions by date (newest first)
-4. Returns a maximum of 100 transactions per request
-
 ## Error Handling
 
 The API implements a comprehensive error handling system that provides consistent JSON responses for all errors:
