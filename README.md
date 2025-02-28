@@ -25,7 +25,14 @@ A simple REST API built with Flask for Peachtree Bank.
    # Edit .env file with your settings
    ```
 
-4. Run the application:
+4. Initialize and seed the database:
+
+   ```
+   python migrations.py
+   python seed.py
+   ```
+
+5. Run the application:
    ```
    python app.py
    ```
@@ -65,7 +72,7 @@ The API implements a comprehensive error handling system that provides consisten
 {
   "error": "ErrorType",
   "message": "Description of what went wrong",
-  "details": {} // Optional additional information
+  "details": {}
 }
 ```
 
@@ -216,21 +223,6 @@ Available environment variables:
 - `DATABASE_URL` - Database connection URL
 - `RATELIMIT_STORAGE_URI` - Storage URI for rate limiting
 - `LOG_LEVEL` - Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-
-## Database Setup
-
-The API uses SQLite with SQLAlchemy ORM for data persistence:
-
-1. **Initialize the database**:
-
-   ```
-   python migrations.py
-   ```
-
-2. **Seed the database with sample data**:
-   ```
-   python seed.py
-   ```
 
 ### Database Models
 
