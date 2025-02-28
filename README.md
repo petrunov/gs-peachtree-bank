@@ -166,14 +166,6 @@ Validation is implemented using:
 
 The API supports different configurations for different environments (development, testing, production). The configuration is managed through the `config.py` file and environment variables.
 
-### Configuration Classes
-
-- **DevelopmentConfig** - Used for local development (default)
-
-  - Debug mode enabled
-  - Detailed logging
-  - SQLite database
-
 ### Environment Variables
 
 You can customize the configuration by setting environment variables. The easiest way is to create a `.env` file in the project root:
