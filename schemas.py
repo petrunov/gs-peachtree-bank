@@ -26,11 +26,6 @@ class AccountSchema(Schema):
             validate.Regexp(r'^[a-zA-Z0-9 ]+$', error="Account name can only contain letters, numbers, and spaces")
         ]
     )
-    balance = fields.Decimal(
-        places=2,
-        as_string=True,
-        validate=validate.Range(min=0, error="Balance cannot be negative")
-    )
     currency = fields.String(
         validate=validate.Length(equal=3, error="Currency code must be 3 characters"),
         default="USD"
@@ -97,8 +92,8 @@ class AccountQuerySchema(Schema):
     )
     sort_by = fields.String(
         validate=validate.OneOf(
-            ["account_number", "account_name", "balance", "created_at"],
-            error="Sort field must be one of: account_number, account_name, balance, created_at"
+            ["account_number", "account_name", "created_at"],
+            error="Sort field must be one of: account_number, account_name, created_at"
         ),
         missing="account_number"
     )

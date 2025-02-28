@@ -22,31 +22,26 @@ def seed_database():
         Account(
             account_number=generate_account_number(),
             account_name="John Doe Checking",
-            balance=5000.00,
             currency="USD"
         ),
         Account(
             account_number=generate_account_number(),
             account_name="Jane Smith Savings",
-            balance=15000.00,
             currency="USD"
         ),
         Account(
             account_number=generate_account_number(),
             account_name="Michael Johnson Business",
-            balance=25000.00,
             currency="USD"
         ),
         Account(
             account_number=generate_account_number(),
             account_name="Sarah Williams Personal",
-            balance=3500.00,
             currency="USD"
         ),
         Account(
             account_number=generate_account_number(),
             account_name="Robert Brown Investment",
-            balance=50000.00,
             currency="USD"
         )
     ]

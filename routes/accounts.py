@@ -39,7 +39,7 @@ accounts_bp = Blueprint('accounts', __name__, url_prefix='/api')
             "in": "query",
             "type": "string",
             "description": "Field to sort by",
-            "enum": ["account_number", "account_name", "balance", "created_at"],
+            "enum": ["account_number", "account_name", "created_at"],
             "default": "account_number",
             "required": False
         },
@@ -73,10 +73,6 @@ accounts_bp = Blueprint('accounts', __name__, url_prefix='/api')
                             "type": "string",
                             "example": "Checking Account"
                         },
-                        "balance": {
-                            "type": "string",
-                            "example": "1000.00"
-                        },
                         "currency": {
                             "type": "string",
                             "example": "USD"
@@ -105,7 +101,7 @@ def get_accounts():
     Query parameters:
     - limit: Maximum number of accounts to return (default: 100)
     - offset: Number of accounts to skip (default: 0)
-    - sort_by: Field to sort by (account_number, account_name, balance, created_at) (default: account_number)
+    - sort_by: Field to sort by (account_number, account_name, created_at) (default: account_number)
     - sort_order: Sort order (asc, desc) (default: asc)
     """
     # Validate query parameters
@@ -129,10 +125,10 @@ def get_accounts():
         sort_column = Account.account_number
     elif sort_by == 'account_name':
         sort_column = Account.account_name
-    elif sort_by == 'balance':
-        sort_column = Account.balance
     elif sort_by == 'created_at':
         sort_column = Account.created_at
+    else:
+        sort_column = Account.account_number
     
     if sort_order.lower() == 'asc':
         query = query.order_by(asc(sort_column))
@@ -149,7 +145,6 @@ def get_accounts():
             "id": account.id,
             "account_number": account.account_number,
             "account_name": account.account_name,
-            "balance": str(account.balance),
             "currency": account.currency,
             "created_at": account.created_at.isoformat(),
             "updated_at": account.updated_at.isoformat()
@@ -190,10 +185,6 @@ def get_accounts():
                     "account_name": {
                         "type": "string",
                         "example": "Checking Account"
-                    },
-                    "balance": {
-                        "type": "string",
-                        "example": "1000.00"
                     },
                     "currency": {
                         "type": "string",
@@ -246,7 +237,6 @@ def get_account(account_id):
         "id": account.id,
         "account_number": account.account_number,
         "account_name": account.account_name,
-        "balance": str(account.balance),
         "currency": account.currency,
         "created_at": account.created_at.isoformat(),
         "updated_at": account.updated_at.isoformat()

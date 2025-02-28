@@ -34,7 +34,6 @@ class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     account_number = db.Column(db.String(10), unique=True, nullable=False)
     account_name = db.Column(db.String(100), nullable=False)
-    balance = db.Column(db.Numeric(10, 2), default=0.00)
     currency = db.Column(db.String(3), default='USD')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

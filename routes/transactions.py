@@ -561,7 +561,7 @@ def create_transaction():
     Accepts JSON with:
     - from_account_id: ID of the source account
     - to_account_id: ID of the destination account
-    - amount: Amount to transfer
+    - amount: Amount of the transaction
     - description: Transaction type (Card Payments, Transaction, Online transfer)
     
     Returns the created transaction.
@@ -578,10 +578,7 @@ def create_transaction():
     from_account = get_or_404(Account, validated_data['from_account_id'])
     to_account = get_or_404(Account, validated_data['to_account_id'])
     
-    # Check if source account has sufficient funds
     amount = Decimal(str(validated_data['amount']))
-    if from_account.balance < amount:
-        raise ValidationError("Insufficient funds in source account")
     
     with db_transaction():
         # Create transaction record
@@ -594,10 +591,6 @@ def create_transaction():
             description=validated_data.get('description', '')
         )
         db.session.add(transaction)
-        
-        # Update account balances
-        from_account.balance -= amount
-        to_account.balance += amount
         
         # Commit is handled by the context manager
     
