@@ -15,13 +15,13 @@ search_bp = Blueprint('search', __name__, url_prefix='/api')
 @swag_from({
     "tags": ["Search"],
     "summary": "Search accounts and transactions",
-    "description": "Search for accounts and transactions by query string",
+    "description": "Search for accounts and transactions by query string. For accounts, searches account numbers and names. For transactions, searches account names (beneficiary) and transaction types.",
     "parameters": [
         {
             "name": "q",
             "in": "query",
             "type": "string",
-            "description": "Search query",
+            "description": "Search query - searches account numbers, account names, and transaction types",
             "required": True
         },
         {
@@ -91,11 +91,12 @@ search_bp = Blueprint('search', __name__, url_prefix='/api')
                                 },
                                 "beneficiary": {
                                     "type": "string",
-                                    "example": "John Doe"
+                                    "example": "John Doe Checking"
                                 },
                                 "description": {
                                     "type": "string",
-                                    "example": "Monthly rent payment"
+                                    "enum": ["Card Payments", "Transaction", "Online transfer"],
+                                    "example": "Transaction"
                                 },
                                 "type": {
                                     "type": "string",
@@ -129,6 +130,8 @@ def search():
     """Search for accounts and transactions.
     
     Returns accounts and transactions that match the search query.
+    Searches account numbers and names for accounts.
+    Searches account names (beneficiary) and transaction types for transactions.
     
     Query parameters:
     - q: Search query (required)
@@ -157,9 +160,9 @@ def search():
     ).limit(limit).offset(offset).all()
     
     # Search for transactions
-    transactions = Transaction.query.filter(
+    transactions = Transaction.query.join(Account, Transaction.to_account_id == Account.id).filter(
         or_(
-            Transaction.beneficiary.ilike(search_term),
+            Account.account_name.ilike(search_term),
             Transaction.description.ilike(search_term)
         )
     ).limit(limit).offset(offset).all()
